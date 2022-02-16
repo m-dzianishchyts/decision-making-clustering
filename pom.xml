@@ -12,10 +12,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <javafx-controls.version>17.0.0.1</javafx-controls.version>
-        <javafx-fxml.version>17.0.0.1</javafx-fxml.version>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
-        <javafx-maven-plugin.version>0.0.3</javafx-maven-plugin.version>
+
+        <javafx-controls.version>17.0.2</javafx-controls.version>
+        <javafx-fxml.version>17.0.2</javafx-fxml.version>
+        <log4j.version>2.17.1</log4j.version>
+        <maven-compiler-plugin.version>3.9.0</maven-compiler-plugin.version>
+        <javafx-maven-plugin.version>0.0.8</javafx-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -28,6 +30,26 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx-fxml.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>${maven-compiler-plugin.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-maven-plugin</artifactId>
+            <version>${javafx-maven-plugin.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -45,7 +67,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>by.bsuir.decision_making.clustering.controller.FxController</mainClass>
+                    <mainClass>by.bsuir.decision_making.clustering.ClusteringApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

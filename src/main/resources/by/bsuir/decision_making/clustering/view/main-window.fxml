@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<HBox prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="by.bsuir.decision_making.clustering.controller.MainWindowController">
+   <children>
+      <VBox spacing="10.0" HBox.hgrow="SOMETIMES">
+         <children>
+            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Observations">
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <StackPane fx:id="chartRegion" prefHeight="150.0" prefWidth="200.0" VBox.vgrow="SOMETIMES" />
+            <AnchorPane>
+               <children>
+                  <HBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <Label maxWidth="1.7976931348623157E308" text="X:" />
+                        <Label prefWidth="70.0" text="Label" fx:id="xCoordinateLabel" />
+                        <Label maxWidth="1.7976931348623157E308" text="Y:" />
+                        <Label fx:id="yCoordinateLabel" prefWidth="70.0" text="Label" />
+                     </children>
+                  </HBox>
+               </children>
+            </AnchorPane>
+         </children>
+         <HBox.margin>
+            <Insets />
+         </HBox.margin>
+         <padding>
+            <Insets left="15.0" right="15.0" top="15.0" />
+         </padding>
+      </VBox>
+      <Separator orientation="VERTICAL" />
+      <VBox alignment="TOP_CENTER" spacing="25.0">
+         <children>
+            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Settings">
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+               <font>
+                  <Font size="16.0" />
+               </font>
+            </Label>
+            <GridPane hgap="10.0" vgap="20.0">
+              <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="75.0" />
+                <ColumnConstraints hgrow="SOMETIMES" minWidth="-Infinity" />
+              </columnConstraints>
+              <rowConstraints>
+                <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+              </rowConstraints>
+               <children>
+                  <Label text="Observations:" />
+                  <TextField fx:id="observationsField" GridPane.columnIndex="1" />
+               </children>
+            </GridPane>
+            <Button fx:id="generateDataButton" mnemonicParsing="false" text="Generate data" />
+            <TableView fx:id="dataTable" editable="true" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="SOMETIMES">
+              <columns>
+                <TableColumn minWidth="-Infinity" prefWidth="-1.0" text="Id" />
+                <TableColumn minWidth="-Infinity" prefWidth="-1.0" text="X" />
+                  <TableColumn minWidth="-Infinity" prefWidth="-1.0" text="Y" />
+              </columns>
+            </TableView>
+            <GridPane hgap="10.0" vgap="20.0">
+               <columnConstraints>
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="75.0" />
+                  <ColumnConstraints hgrow="SOMETIMES" minWidth="-Infinity" />
+               </columnConstraints>
+               <rowConstraints>
+                  <RowConstraints minHeight="10.0" vgrow="SOMETIMES" />
+               </rowConstraints>
+               <children>
+                  <Slider fx:id="clustersAmountSlider" showTickLabels="true" showTickMarks="true" GridPane.columnIndex="1" />
+                  <HBox spacing="5.0">
+                     <children>
+                        <Label text="Clusters:" />
+                        <Label fx:id="clustersAmountLabel" text="###" />
+                     </children>
+                  </HBox>
+               </children>
+            </GridPane>
+            <Button fx:id="startButton" mnemonicParsing="false" text="Start clustering" />
+         </children>
+         <padding>
+            <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+         </padding>
+         <HBox.margin>
+            <Insets />
+         </HBox.margin>
+      </VBox>
+   </children>
+</HBox>
