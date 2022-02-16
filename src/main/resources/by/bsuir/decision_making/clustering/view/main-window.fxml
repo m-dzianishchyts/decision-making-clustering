@@ -8,7 +8,6 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
@@ -21,30 +20,18 @@
    <children>
       <VBox spacing="10.0" HBox.hgrow="SOMETIMES">
          <children>
-            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Observations">
+            <Label alignment="CENTER" maxWidth="1.7976931348623157E308" text="Scatter chart">
                <font>
                   <Font size="16.0" />
                </font>
             </Label>
-            <StackPane fx:id="chartRegion" prefHeight="150.0" prefWidth="200.0" VBox.vgrow="SOMETIMES" />
-            <AnchorPane>
-               <children>
-                  <HBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
-                     <children>
-                        <Label maxWidth="1.7976931348623157E308" text="X:" />
-                        <Label prefWidth="70.0" text="Label" fx:id="xCoordinateLabel" />
-                        <Label maxWidth="1.7976931348623157E308" text="Y:" />
-                        <Label fx:id="yCoordinateLabel" prefWidth="70.0" text="Label" />
-                     </children>
-                  </HBox>
-               </children>
-            </AnchorPane>
+            <StackPane fx:id="chartRegion" prefHeight="150.0" prefWidth="200.0" stylesheets="@style/scatter-chart.css" VBox.vgrow="SOMETIMES" />
          </children>
          <HBox.margin>
             <Insets />
          </HBox.margin>
          <padding>
-            <Insets left="15.0" right="15.0" top="15.0" />
+            <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
          </padding>
       </VBox>
       <Separator orientation="VERTICAL" />
@@ -68,15 +55,15 @@
               </rowConstraints>
                <children>
                   <Label text="Observations:" />
-                  <TextField fx:id="observationsField" GridPane.columnIndex="1" />
+                  <TextField fx:id="observationsAmountField" GridPane.columnIndex="1" />
                </children>
             </GridPane>
             <Button fx:id="generateDataButton" mnemonicParsing="false" text="Generate data" />
             <TableView fx:id="dataTable" editable="true" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="SOMETIMES">
               <columns>
-                <TableColumn minWidth="-Infinity" prefWidth="-1.0" text="Id" />
-                <TableColumn minWidth="-Infinity" prefWidth="-1.0" text="X" />
-                  <TableColumn minWidth="-Infinity" prefWidth="-1.0" text="Y" />
+                <TableColumn fx:id="observationIdColumn" prefWidth="60.0" text="Id" />
+                <TableColumn fx:id="observationXValueColumn" text="X" />
+                  <TableColumn fx:id="observationYValueColumn" text="Y" />
               </columns>
             </TableView>
             <GridPane hgap="10.0" vgap="20.0">
