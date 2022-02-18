@@ -1,5 +1,6 @@
 package by.bsuir.decision_making.clustering.controller;
 
+import by.bsuir.decision_making.clustering.model.Cluster;
 import by.bsuir.decision_making.clustering.model.ClusterAnalysis;
 import by.bsuir.decision_making.clustering.model.Observation;
 import de.gsi.chart.XYChart;
@@ -14,11 +15,13 @@ import de.gsi.chart.renderer.ErrorStyle;
 import de.gsi.chart.renderer.LineStyle;
 import de.gsi.chart.renderer.spi.ErrorDataSetRenderer;
 import de.gsi.dataset.spi.DoubleDataSet;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -39,6 +42,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainWindowController {
@@ -73,6 +77,9 @@ public class MainWindowController {
     private StackPane chartRegion;
 
     private XYChart chart;
+    private ErrorDataSetRenderer observationRenderer;
+    private ErrorDataSetRenderer meanRenderer;
+
 
     private ObservableList<Observation> observations;
     private SimpleIntegerProperty observationsAmount;
@@ -111,7 +118,7 @@ public class MainWindowController {
         chart = new XYChart(xAxis, yAxis);
         chartRegion.getChildren().add(chart);
 
-        initializeChartRenderer();
+        initializeChartRenderers();
         initializeChartPlugins();
     }
 
@@ -122,16 +129,32 @@ public class MainWindowController {
         return axis;
     }
 
-    private void initializeChartRenderer() {
-        ErrorDataSetRenderer dataSetRenderer = new ErrorDataSetRenderer();
-        dataSetRenderer.setMarkerSize(2);
-        dataSetRenderer.setPolyLineStyle(LineStyle.NONE);
-        dataSetRenderer.setErrorType(ErrorStyle.NONE);
-        dataSetRenderer.setDrawMarker(true);
-        dataSetRenderer.setDrawBubbles(false);
-        dataSetRenderer.setAssumeSortedData(false);
-        dataSetRenderer.setMarker(DefaultMarker.CIRCLE);
-        chart.getRenderers().setAll(dataSetRenderer);
+    private void initializeChartRenderers() {
+        initializeObservationRenderer();
+        initializeMeanRenderer();
+        chart.getRenderers().setAll(observationRenderer, meanRenderer);
+    }
+
+    private void initializeObservationRenderer() {
+        observationRenderer = new ErrorDataSetRenderer();
+        observationRenderer.setMarkerSize(2);
+        observationRenderer.setPolyLineStyle(LineStyle.NONE);
+        observationRenderer.setErrorType(ErrorStyle.NONE);
+        observationRenderer.setDrawMarker(true);
+        observationRenderer.setDrawBubbles(false);
+        observationRenderer.setAssumeSortedData(false);
+        observationRenderer.setMarker(DefaultMarker.CIRCLE);
+    }
+
+    private void initializeMeanRenderer() {
+        meanRenderer = new ErrorDataSetRenderer();
+        meanRenderer.setMarkerSize(5);
+        meanRenderer.setPolyLineStyle(LineStyle.NONE);
+        meanRenderer.setErrorType(ErrorStyle.NONE);
+        meanRenderer.setDrawMarker(true);
+        meanRenderer.setDrawBubbles(false);
+        meanRenderer.setAssumeSortedData(false);
+        meanRenderer.setMarker(DefaultMarker.CIRCLE);
     }
 
     private void initializeChartPlugins() {
@@ -198,13 +221,42 @@ public class MainWindowController {
         }
     }
 
-    private void startClustering(ActionEvent event) {
+    private void startClustering(ActionEvent actionEvent) {
         if (observations.isEmpty()) {
             new Alert(Alert.AlertType.ERROR, "No observations generated. Clustering aborted.").show();
             return;
         }
-        DoubleDataSet dataSet = new DoubleDataSet("Observations");
-        observations.forEach(observation -> dataSet.add(observation.getValue(0), observation.getValue(1)));
-        chart.getDatasets().add(dataSet);
+        if (clustersAmount.getValue() == 0) {
+            new Alert(Alert.AlertType.ERROR, "Clusters amount cannot be 0. Clustering aborted.").show();
+            return;
+        }
+
+        Task<Void> clusteringTask = new Task<>() {
+            @Override
+            protected Void call() {
+                List<Cluster> clusters = ClusterAnalysis.cluster(observations, clustersAmount.getValue());
+                List<DoubleDataSet> dataSets = new ArrayList<>(clusters.size());
+                for (int i = 0; i < clusters.size(); i++) {
+                    List<Observation> clusterObservations = clusters.get(i).getObservations();
+                    DoubleDataSet dataSet = new DoubleDataSet("Cluster #" + i, clusterObservations.size());
+                    clusterObservations.forEach(
+                            observation -> dataSet.add(observation.getValue(0), observation.getValue(1)));
+                    dataSets.add(dataSet);
+                }
+                DoubleDataSet meansDataSet = new DoubleDataSet("Clusters means", clusters.size());
+                clusters.stream().map(Cluster::getMean).forEach(mean -> meansDataSet.add(mean[0], mean[1]));
+                Platform.runLater(() -> {
+                    observationRenderer.getDatasets().setAll(dataSets);
+                    meanRenderer.getDatasets().setAll(meansDataSet);
+                });
+                return null;
+            }
+        };
+
+        startButton.setDisable(true);
+        clusteringTask.setOnSucceeded((workerStateEvent) -> startButton.setDisable(false));
+        Thread worker = new Thread(clusteringTask);
+        worker.setDaemon(true);
+        worker.start();
     }
 }

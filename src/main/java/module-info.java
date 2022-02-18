@@ -5,6 +5,8 @@ module clustering {
     requires org.apache.logging.log4j;
     requires de.gsi.chartfx.chart;
     requires de.gsi.chartfx.dataset;
+    requires ejml.core;
+    requires ejml.simple;
 
     exports by.bsuir.decision_making.clustering.controller to javafx.fxml;
     exports by.bsuir.decision_making.clustering to javafx.graphics;
