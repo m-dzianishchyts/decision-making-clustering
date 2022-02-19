@@ -9,7 +9,7 @@ module clustering {
     requires ejml.simple;
 
     exports by.bsuir.decision_making.clustering.controller to javafx.fxml;
-    exports by.bsuir.decision_making.clustering to javafx.graphics;
+    exports by.bsuir.decision_making.clustering.app to javafx.graphics;
 
     opens by.bsuir.decision_making.clustering.controller to javafx.fxml;
 }
