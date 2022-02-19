@@ -9,6 +9,7 @@
     <version>1.0</version>
 
     <properties>
+        <exec.mainClass>by.bsuir.decision_making.clustering.ClusteringApplication</exec.mainClass>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -21,14 +22,20 @@
         <chartfx-chart.version>11.2.5</chartfx-chart.version>
         <controlsfx.version>11.1.1</controlsfx.version>
         <slf4j-simple.version>2.0.0-alpha0</slf4j-simple.version>
-        <ejml-all.version>0.41</ejml-all.version>
+        <ejml.version>0.41</ejml.version>
+        <javapackager.version>1.6.3</javapackager.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.ejml</groupId>
-            <artifactId>ejml-all</artifactId>
-            <version>${ejml-all.version}</version>
+            <artifactId>ejml-core</artifactId>
+            <version>${ejml.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ejml</groupId>
+            <artifactId>ejml-simple</artifactId>
+            <version>${ejml.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gsi.chart</groupId>
@@ -95,9 +102,24 @@
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx-maven-plugin.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>io.github.fvarrui</groupId>
+                <artifactId>javapackager</artifactId>
+                <version>${javapackager.version}</version>
                 <configuration>
-                    <mainClass>by.bsuir.decision_making.clustering.ClusteringApplication</mainClass>
+                    <bundleJre>true</bundleJre>
+                    <jrePath>C:\Users\maxiemar\.jdks\corretto-17.0.2</jrePath>
+                    <generateInstaller>false</generateInstaller>
                 </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
