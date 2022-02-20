@@ -21,7 +21,6 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -43,7 +42,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public class MainWindowController {
 
@@ -77,9 +78,8 @@ public class MainWindowController {
     private StackPane chartRegion;
 
     private XYChart chart;
-    private ErrorDataSetRenderer observationRenderer;
+    private ErrorDataSetRenderer clusterRenderer;
     private ErrorDataSetRenderer meanRenderer;
-
 
     private ObservableList<Observation> observations;
     private SimpleIntegerProperty observationsAmount;
@@ -132,18 +132,18 @@ public class MainWindowController {
     private void initializeChartRenderers() {
         initializeObservationRenderer();
         initializeMeanRenderer();
-        chart.getRenderers().setAll(observationRenderer, meanRenderer);
+        chart.getRenderers().setAll(clusterRenderer, meanRenderer);
     }
 
     private void initializeObservationRenderer() {
-        observationRenderer = new ErrorDataSetRenderer();
-        observationRenderer.setMarkerSize(2);
-        observationRenderer.setPolyLineStyle(LineStyle.NONE);
-        observationRenderer.setErrorType(ErrorStyle.NONE);
-        observationRenderer.setDrawMarker(true);
-        observationRenderer.setDrawBubbles(false);
-        observationRenderer.setAssumeSortedData(false);
-        observationRenderer.setMarker(DefaultMarker.CIRCLE);
+        clusterRenderer = new ErrorDataSetRenderer();
+        clusterRenderer.setMarkerSize(2);
+        clusterRenderer.setPolyLineStyle(LineStyle.NONE);
+        clusterRenderer.setErrorType(ErrorStyle.NONE);
+        clusterRenderer.setDrawMarker(true);
+        clusterRenderer.setDrawBubbles(false);
+        clusterRenderer.setAssumeSortedData(false);
+        clusterRenderer.setMarker(DefaultMarker.CIRCLE);
     }
 
     private void initializeMeanRenderer() {
@@ -210,10 +210,16 @@ public class MainWindowController {
             if (observationsAmount < 0) {
                 throw new IllegalArgumentException("Observations amount cannot be negative number");
             }
-            List<Observation> generatedObservations = ClusterAnalysis.generateData(observationsAmount);
-            observations.clear();
-            observations.addAll(generatedObservations);
-            logger.info("Data generated: {} observations.", generatedObservations.size());
+            generateDataButton.setDisable(true);
+            CompletableFuture<List<Observation>> generatedDataFuture =
+                    CompletableFuture.supplyAsync(() -> ClusterAnalysis.generateData(observationsAmount));
+            generatedDataFuture.thenAcceptAsync(data -> {
+                observations.setAll(data);
+                observations.sort(Comparator.comparingDouble(
+                        (Observation observation) -> Math.hypot(observation.getValue(0), observation.getValue(1))));
+                logger.info("Data generated: {} observations.", data.size());
+                generateDataButton.setDisable(false);
+            });
         } catch (NumberFormatException e) {
             new Alert(Alert.AlertType.WARNING, "Enter observations amount.").show();
         } catch (IllegalArgumentException e) {
@@ -230,33 +236,36 @@ public class MainWindowController {
             new Alert(Alert.AlertType.ERROR, "Clusters amount cannot be 0. Clustering aborted.").show();
             return;
         }
-
-        Task<Void> clusteringTask = new Task<>() {
-            @Override
-            protected Void call() {
-                List<Cluster> clusters = ClusterAnalysis.cluster(observations, clustersAmount.getValue());
-                List<DoubleDataSet> dataSets = new ArrayList<>(clusters.size());
-                for (int i = 0; i < clusters.size(); i++) {
-                    List<Observation> clusterObservations = clusters.get(i).getObservations();
-                    DoubleDataSet dataSet = new DoubleDataSet("Cluster #" + i, clusterObservations.size());
-                    clusterObservations.forEach(
-                            observation -> dataSet.add(observation.getValue(0), observation.getValue(1)));
-                    dataSets.add(dataSet);
-                }
-                DoubleDataSet meansDataSet = new DoubleDataSet("Clusters means", clusters.size());
-                clusters.stream().map(Cluster::getMean).forEach(mean -> meansDataSet.add(mean[0], mean[1]));
-                Platform.runLater(() -> {
-                    observationRenderer.getDatasets().setAll(dataSets);
-                    meanRenderer.getDatasets().setAll(meansDataSet);
-                });
-                return null;
-            }
-        };
-
         startButton.setDisable(true);
-        clusteringTask.setOnSucceeded((workerStateEvent) -> startButton.setDisable(false));
-        Thread worker = new Thread(clusteringTask);
-        worker.setDaemon(true);
-        worker.start();
+
+        // Perform clustering available observations.
+        CompletableFuture<List<Cluster>> futureClusters =
+                CompletableFuture.supplyAsync(() -> ClusterAnalysis.cluster(observations, clustersAmount.getValue()));
+
+        // After clustering prepare then show clusters as DataSets.
+        CompletableFuture<Void> futureClustersShown = futureClusters.thenApply(clusters -> {
+            List<DoubleDataSet> clustersDataSets = new ArrayList<>(clusters.size());
+            for (int i = 0; i < clusters.size(); i++) {
+                List<Observation> clusterObservations = clusters.get(i).getObservations();
+                DoubleDataSet clusterDataSet = new DoubleDataSet("Cluster #" + i, clusterObservations.size());
+                clusterObservations.forEach(observation -> clusterDataSet.add(observation.getValue(0),
+                                                                              observation.getValue(1)));
+                clustersDataSets.add(clusterDataSet);
+            }
+            return clustersDataSets;
+        }).thenAcceptAsync(clustersDataSets -> Platform.runLater(
+                () -> clusterRenderer.getDatasets().setAll(clustersDataSets))
+        );
+
+        // After clustering prepare then show clusters means as DataSet.
+        CompletableFuture<Void> futureMeansShown = futureClusters.thenApply(clusters -> {
+            DoubleDataSet meansDataSet = new DoubleDataSet("Clusters means", clusters.size());
+            clusters.parallelStream().map(Cluster::getMean).forEach(mean -> meansDataSet.add(mean[0], mean[1]));
+            return meansDataSet;
+        }).thenAcceptAsync(meansDataSet -> Platform.runLater(() -> meanRenderer.getDatasets().setAll(meansDataSet)));
+
+        // After all enable start button.
+        CompletableFuture.allOf(futureClustersShown, futureMeansShown)
+                         .thenRun(() -> startButton.setDisable(false));
     }
 }
