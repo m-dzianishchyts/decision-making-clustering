@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public class ClusterAnalysis {
@@ -43,24 +44,16 @@ public class ClusterAnalysis {
             return 0;
         }
         return Double.compare(meanVectorA.normF(), meanVectorB.normF());
-//        for (int i = 0; i < meanA.length; i++) {
-//            BigDecimal meanValueA = BigDecimal.valueOf(meanA[i]).round(MeanRoundingMathContext);
-//            BigDecimal meanValueB = BigDecimal.valueOf(meanB[i]).round(MeanRoundingMathContext);
-//            compareResult = meanValueA.compareTo(meanValueB);
-//            if (compareResult != 0) {
-//                return compareResult;
-//            }
-//        }
-//        return compareResult;
     };
 
     private static final Logger logger = LogManager.getLogger(ClusterAnalysis.class);
 
     public static List<Observation> generateData(int amount) {
+        Random random = new Random();
         List<Observation> observations = new ArrayList<>(amount);
         for (int i = 0; i < amount; i++) {
-            double xValue = generateRandomDouble(-1, 1);
-            double yValue = generateRandomDouble(-1, 1);
+            double xValue = random.nextDouble(-1, 1);
+            double yValue = random.nextDouble(-1, 1);
             Observation observation = new Observation(xValue, yValue);
             observations.add(observation);
         }
@@ -93,14 +86,6 @@ public class ClusterAnalysis {
         Duration clusteringTime = Duration.between(before, after);
         logger.info("Clustering succeed in {}.{} sec", clusteringTime.getSeconds(), clusteringTime.toMillisPart());
         return clusters;
-    }
-
-    private static double generateRandomDouble(double from, double to) {
-        if (to < from) {
-            throw new IllegalArgumentException(String.format("Invalid range (%f, %f)", from, to));
-        }
-        double value = (to - from) * Math.random() + from;
-        return value;
     }
 
     private static void assignToClusters(List<Observation> observations, List<Cluster> clusters) {
