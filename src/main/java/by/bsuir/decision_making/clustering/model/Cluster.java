@@ -2,6 +2,7 @@ package by.bsuir.decision_making.clustering.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -20,7 +21,7 @@ public class Cluster {
         Objects.requireNonNull(mean);
         this.mean = mean;
         this.name = name;
-        this.observations = new ArrayList<>();
+        this.observations = Collections.synchronizedList(new ArrayList<>());
     }
 
     public String getName() {
@@ -49,7 +50,7 @@ public class Cluster {
 
     public void setObservations(List<Observation> observations) {
         Objects.requireNonNull(observations);
-        this.observations = new ArrayList<>(observations);
+        this.observations = Collections.synchronizedList(new ArrayList<>(observations));
     }
 
     @Override

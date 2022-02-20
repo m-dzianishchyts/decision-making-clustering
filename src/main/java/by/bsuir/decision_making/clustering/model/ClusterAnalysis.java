@@ -61,31 +61,38 @@ public class ClusterAnalysis {
     }
 
     public static List<Cluster> cluster(List<Observation> observations, int clustersAmount) {
-        logger.info("Cluster data: observations = {}, clusters = {}", observations.size(), clustersAmount);
-        if (clustersAmount > observations.size()) {
-            throw new IllegalArgumentException("Not enough observations to perform clustering: " + observations.size());
+        try {
+            logger.info("Cluster data: observations = {}, clusters = {}", observations.size(), clustersAmount);
+            if (clustersAmount > observations.size()) {
+                throw new IllegalArgumentException("Not enough observations to perform clustering: "
+                                                   + observations.size());
+            }
+            Instant before = Instant.now();
+            List<Cluster> clusters = observations
+                    .stream()
+                    .limit(clustersAmount)
+                    .map((Observation mean) -> new Cluster(mean.values)).toList();
+            int iteration = 0;
+            boolean anyClusterMeanUpdated;
+            do {
+                logger.debug("Iteration #{}. Clustering...", iteration);
+                iteration++;
+                assignToClusters(observations, clusters);
+                anyClusterMeanUpdated = updateMeans(clusters);
+                String clustersSizes = clusters.stream()
+                                               .mapToInt(cluster -> cluster.getObservations().size())
+                                               .mapToObj(String::valueOf)
+                                               .collect(Collectors.joining(", "));
+                logger.debug("Clusters sizes: {}", clustersSizes);
+            } while (anyClusterMeanUpdated);
+            Instant after = Instant.now();
+            Duration clusteringTime = Duration.between(before, after);
+            logger.info("Clustering succeed in {}.{} sec", clusteringTime.getSeconds(), clusteringTime.toMillisPart());
+            return clusters;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw e;
         }
-        Instant before = Instant.now();
-        List<Cluster> clusters = observations.stream()
-                                             .limit(clustersAmount)
-                                             .map((Observation mean) -> new Cluster(mean.values)).toList();
-        int iteration = 0;
-        boolean anyClusterMeanUpdated;
-        do {
-            logger.debug("Iteration #{}. Clustering...", iteration);
-            iteration++;
-            assignToClusters(observations, clusters);
-            anyClusterMeanUpdated = updateMeans(clusters);
-            String clustersSizes = clusters.stream()
-                                           .map(cluster -> cluster.getObservations().size())
-                                           .map(String::valueOf)
-                                           .collect(Collectors.joining(", "));
-            logger.debug("Clusters sizes: {}", clustersSizes);
-        } while (anyClusterMeanUpdated);
-        Instant after = Instant.now();
-        Duration clusteringTime = Duration.between(before, after);
-        logger.info("Clustering succeed in {}.{} sec", clusteringTime.getSeconds(), clusteringTime.toMillisPart());
-        return clusters;
     }
 
     private static void assignToClusters(List<Observation> observations, List<Cluster> clusters) {
