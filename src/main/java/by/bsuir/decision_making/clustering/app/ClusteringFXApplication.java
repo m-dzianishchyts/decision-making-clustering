@@ -25,7 +25,7 @@ public class ClusteringFXApplication extends Application {
     }
 
     @Override
-    public void start(Stage stage) throws Exception {
+    public void start(Stage stage) {
         String pathToResources = Configuration.getInstance().getProperties().getProperty(Configuration.RESOURCES_PATH);
         String viewPath = pathToResources + MAIN_WINDOW_FXML;
         try {
@@ -38,6 +38,7 @@ public class ClusteringFXApplication extends Application {
             stage.show();
         } catch (Throwable e) {
             logger.error(e);
+            e.printStackTrace();
             Platform.exit();
         }
     }

@@ -2,7 +2,11 @@ package by.bsuir.decision_making.clustering.controller;
 
 import by.bsuir.decision_making.clustering.model.Cluster;
 import by.bsuir.decision_making.clustering.model.ClusterAnalysis;
+import by.bsuir.decision_making.clustering.model.CoordinateSystem;
 import by.bsuir.decision_making.clustering.model.Observation;
+import by.bsuir.decision_making.clustering.model.generation.DataGenerator;
+import by.bsuir.decision_making.clustering.model.generation.Distribution;
+import by.bsuir.decision_making.clustering.model.generation.DistributionMethod;
 import de.gsi.chart.XYChart;
 import de.gsi.chart.axes.Axis;
 import de.gsi.chart.axes.spi.DefaultNumericAxis;
@@ -19,12 +23,15 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TableCell;
@@ -32,6 +39,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -45,6 +53,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.stream.IntStream;
 
 public class MainWindowController {
 
@@ -55,6 +66,9 @@ public class MainWindowController {
 
     private static final StringConverter<Number> observationValueFormatter =
             new NumberStringConverter(new DecimalFormat("0.########"));
+
+    private static final TextFormatter<Integer> IntegerStringFormatter
+            = new TextFormatter<>(new IntegerStringConverter());
 
     @FXML
     private TextField observationsAmountField;
@@ -77,6 +91,54 @@ public class MainWindowController {
     @FXML
     private StackPane chartRegion;
 
+    @FXML
+    private ComboBox<CoordinateSystem> coordinateSystemComboBox;
+
+    private SimpleObjectProperty<CoordinateSystem> coordinateSystem;
+
+    @FXML
+    private Label firstCoordinateLabel;
+    @FXML
+    private Label secondCoordinateLabel;
+    @FXML
+    private ComboBox<Distribution> firstCoordinateDistributionComboBox;
+    @FXML
+    private ComboBox<Distribution> secondCoordinateDistributionComboBox;
+
+    private SimpleObjectProperty<Distribution> firstCoordinateDistribution;
+    private SimpleObjectProperty<Distribution> secondCoordinateDistribution;
+
+    @FXML
+    private HBox firstCoordinateFirstValueSection;
+    @FXML
+    private HBox firstCoordinateSecondValueSection;
+    @FXML
+    private HBox secondCoordinateFirstValueSection;
+    @FXML
+    private HBox secondCoordinateSecondValueSection;
+
+    @FXML
+    private Label firstCoordinateFirstValueLabel;
+    @FXML
+    private Label firstCoordinateSecondValueLabel;
+    @FXML
+    private Label secondCoordinateFirstValueLabel;
+    @FXML
+    private Label secondCoordinateSecondValueLabel;
+    @FXML
+    private TextField firstCoordinateFirstValueTextField;
+    @FXML
+    private TextField firstCoordinateSecondValueTextField;
+    @FXML
+    private TextField secondCoordinateFirstValueTextField;
+    @FXML
+    private TextField secondCoordinateSecondValueTextField;
+
+    private SimpleDoubleProperty firstCoordinateFirstValue;
+    private SimpleDoubleProperty firstCoordinateSecondValue;
+    private SimpleDoubleProperty secondCoordinateFirstValue;
+    private SimpleDoubleProperty secondCoordinateSecondValue;
+
     private XYChart chart;
     private ErrorDataSetRenderer clusterRenderer;
     private ErrorDataSetRenderer meanRenderer;
@@ -91,25 +153,91 @@ public class MainWindowController {
         observationsAmount = new SimpleIntegerProperty();
         clustersAmount = new SimpleIntegerProperty();
 
+        coordinateSystem = new SimpleObjectProperty<>();
+        firstCoordinateDistribution = new SimpleObjectProperty<>();
+        secondCoordinateDistribution = new SimpleObjectProperty<>();
+
+        firstCoordinateFirstValue = new SimpleDoubleProperty();
+        firstCoordinateSecondValue = new SimpleDoubleProperty();
+        secondCoordinateFirstValue = new SimpleDoubleProperty();
+        secondCoordinateSecondValue = new SimpleDoubleProperty();
+
         initializeChart();
         initializeTable();
-        setClustersAmountHandling();
+        initializeSettingsSection();
+    }
+
+    private void initializeSettingsSection() {
         setObservationsAmountHandling();
+        setCoordinateSystemHandling();
+        setCoordinateDistributionHandling();
+        setClustersAmountHandling();
         generateDataButton.setOnAction(this::generateData);
         startButton.setOnAction(this::startClustering);
     }
 
+    private void setCoordinateDistributionHandling() {
+        firstCoordinateDistributionComboBox.getItems().addAll(Distribution.values());
+        secondCoordinateDistributionComboBox.getItems().addAll(Distribution.values());
+        firstCoordinateDistribution.bind(firstCoordinateDistributionComboBox.valueProperty());
+        secondCoordinateDistribution.bind(secondCoordinateDistributionComboBox.valueProperty());
+        setCoordinateDistributionChangeListener(firstCoordinateDistributionComboBox, firstCoordinateFirstValueLabel,
+                                                firstCoordinateSecondValueLabel, firstCoordinateFirstValueSection,
+                                                firstCoordinateSecondValueSection, firstCoordinateFirstValue,
+                                                firstCoordinateSecondValue);
+        setCoordinateDistributionChangeListener(secondCoordinateDistributionComboBox, secondCoordinateFirstValueLabel,
+                                                secondCoordinateSecondValueLabel, secondCoordinateFirstValueSection,
+                                                secondCoordinateSecondValueSection, secondCoordinateFirstValue,
+                                                secondCoordinateSecondValue);
+        firstCoordinateDistributionComboBox.getSelectionModel().selectFirst();
+        secondCoordinateDistributionComboBox.getSelectionModel().selectFirst();
+
+        NumberStringConverter converter = new NumberStringConverter();
+        firstCoordinateFirstValueTextField.textProperty().bindBidirectional(firstCoordinateFirstValue, converter);
+        firstCoordinateSecondValueTextField.textProperty().bindBidirectional(firstCoordinateSecondValue, converter);
+        secondCoordinateFirstValueTextField.textProperty().bindBidirectional(secondCoordinateFirstValue, converter);
+        secondCoordinateSecondValueTextField.textProperty().bindBidirectional(secondCoordinateSecondValue, converter);
+    }
+
+    private void setCoordinateDistributionChangeListener(ComboBox<Distribution> distributionComboBox,
+                                                         Label firstValueLabel,
+                                                         Label secondValueLabel,
+                                                         HBox firstValueSection,
+                                                         HBox secondValueSection,
+                                                         SimpleDoubleProperty coordinateFirstValue,
+                                                         SimpleDoubleProperty coordinateSecondValue) {
+        ChangeListener<Distribution> distributionChangeListener = (observable, oldValue, newValue) -> {
+            firstValueLabel.setText(newValue.getFirstValueName() + ":");
+            secondValueLabel.setText(newValue.getSecondValueName() + ":");
+            firstValueSection.setDisable(newValue.getFirstValueName() == null);
+            firstValueSection.setVisible(newValue.getFirstValueName() != null);
+            secondValueSection.setDisable(newValue.getSecondValueName() == null);
+            secondValueSection.setVisible(newValue.getSecondValueName() != null);
+            coordinateFirstValue.set(0);
+            coordinateSecondValue.set(0);
+        };
+        distributionComboBox.getSelectionModel().selectedItemProperty().addListener(distributionChangeListener);
+    }
+
+    private void setCoordinateSystemHandling() {
+        coordinateSystemComboBox.getItems().addAll(CoordinateSystem.values());
+        coordinateSystemComboBox.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    firstCoordinateLabel.setText(newValue.getFirstCoordinateName());
+                    secondCoordinateLabel.setText(newValue.getSecondCoordinateName());
+                });
+        coordinateSystem.bind(coordinateSystemComboBox.valueProperty());
+        coordinateSystemComboBox.getSelectionModel().selectFirst();
+    }
+
     private void setObservationsAmountHandling() {
-        observationsAmountField.setTextFormatter(new TextFormatter<>(new IntegerStringConverter()));
-        observationsAmountField.textProperty().addListener(
-                (observable, oldValue, newValue) -> observationsAmount.set(Integer.parseInt(newValue)));
+        observationsAmountField.setTextFormatter(IntegerStringFormatter);
+        observationsAmountField.textProperty().bindBidirectional(observationsAmount, observationValueFormatter);
     }
 
     private void setClustersAmountHandling() {
         clustersAmount.bindBidirectional(clustersAmountSlider.valueProperty());
-        clustersAmount.addListener(
-                (observable, oldValue, newValue) -> clustersAmountLabel.setText(String.valueOf(newValue)));
-        clustersAmountLabel.setText(Integer.toString((int) clustersAmountSlider.getMin()));
+        clustersAmountLabel.textProperty().bindBidirectional(clustersAmount, new NumberStringConverter());
     }
 
     private void initializeChart() {
@@ -211,14 +339,38 @@ public class MainWindowController {
                 throw new IllegalArgumentException("Observations amount cannot be negative number");
             }
             generateDataButton.setDisable(true);
-            CompletableFuture<List<Observation>> generatedDataFuture =
-                    CompletableFuture.supplyAsync(() -> ClusterAnalysis.generateData(observationsAmount));
+            DistributionMethod firstCoordinateDistributionMethod = firstCoordinateDistribution.get().getAlgorithm();
+            DistributionMethod secondCoordinateDistributionMethod = secondCoordinateDistribution.get().getAlgorithm();
+            if (firstCoordinateDistribution.get().getFirstValueName() != null) {
+                firstCoordinateDistributionMethod.setFirstValue(firstCoordinateFirstValue.doubleValue());
+            }
+            if (firstCoordinateDistribution.get().getSecondValueName() != null) {
+                firstCoordinateDistributionMethod.setSecondValue(firstCoordinateSecondValue.doubleValue());
+            }
+            if (secondCoordinateDistribution.get().getFirstValueName() != null) {
+                secondCoordinateDistributionMethod.setFirstValue(secondCoordinateFirstValue.doubleValue());
+            }
+            if (secondCoordinateDistribution.get().getSecondValueName() != null) {
+                secondCoordinateDistributionMethod.setSecondValue(secondCoordinateSecondValue.doubleValue());
+            }
+            DataGenerator dataGenerator = coordinateSystem.get().getDataGenerator(firstCoordinateDistributionMethod,
+                                                                                  secondCoordinateDistributionMethod);
+            Supplier<List<Observation>> resultSupplier = () -> ClusterAnalysis.generateData(observationsAmount,
+                                                                                            dataGenerator);
+            CompletableFuture<List<Observation>> generatedDataFuture = CompletableFuture.supplyAsync(resultSupplier);
+            ToDoubleFunction<Observation> observationToModulus = (observation) -> Math.hypot(observation.getValue(0),
+                                                                                             observation.getValue(1));
             generatedDataFuture.thenAcceptAsync(data -> {
                 observations.setAll(data);
-                observations.sort(Comparator.comparingDouble(
-                        (Observation observation) -> Math.hypot(observation.getValue(0), observation.getValue(1))));
-                logger.info("Data generated: {} observations.", data.size());
+                observations.sort(Comparator.comparingDouble(observationToModulus));
+                logger.info("Data generated ({}, {}, {}): {} observations.",
+                            coordinateSystem.get(), firstCoordinateDistribution.get(),
+                            secondCoordinateDistribution.get(), data.size());
+            }).thenRun(() -> {
                 generateDataButton.setDisable(false);
+            }).exceptionallyAsync(throwable -> {
+                logger.error(throwable.getMessage(), throwable);
+                return null;
             });
         } catch (NumberFormatException e) {
             new Alert(Alert.AlertType.WARNING, "Enter observations amount.").show();
@@ -227,7 +379,7 @@ public class MainWindowController {
         }
     }
 
-    private void startClustering(ActionEvent actionEvent) {
+    private void startClustering(ActionEvent event) {
         if (observations.isEmpty()) {
             new Alert(Alert.AlertType.ERROR, "No observations generated. Clustering aborted.").show();
             return;
@@ -243,29 +395,37 @@ public class MainWindowController {
                 CompletableFuture.supplyAsync(() -> ClusterAnalysis.cluster(observations, clustersAmount.getValue()));
 
         // After clustering prepare then show clusters as DataSets.
-        CompletableFuture<Void> futureClustersShown = futureClusters.thenApply(clusters -> {
+        CompletableFuture<Void> futureClustersShown = futureClusters.thenAcceptAsync(clusters -> {
             List<DoubleDataSet> clustersDataSets = new ArrayList<>(clusters.size());
-            for (int i = 0; i < clusters.size(); i++) {
+            IntStream.range(0, clusters.size()).forEach(i -> {
                 List<Observation> clusterObservations = clusters.get(i).getObservations();
                 DoubleDataSet clusterDataSet = new DoubleDataSet("Cluster #" + i, clusterObservations.size());
                 clusterObservations.forEach(observation -> clusterDataSet.add(observation.getValue(0),
                                                                               observation.getValue(1)));
                 clustersDataSets.add(clusterDataSet);
-            }
-            return clustersDataSets;
-        }).thenAcceptAsync(clustersDataSets -> Platform.runLater(
-                () -> clusterRenderer.getDatasets().setAll(clustersDataSets))
-        );
+            });
+            Platform.runLater(() -> clusterRenderer.getDatasets().setAll(clustersDataSets));
+        }).exceptionallyAsync(throwable -> {
+            logger.error(throwable.getMessage(), throwable);
+            return null;
+        });
 
         // After clustering prepare then show clusters means as DataSet.
-        CompletableFuture<Void> futureMeansShown = futureClusters.thenApply(clusters -> {
+        CompletableFuture<Void> futureMeansShown = futureClusters.thenAcceptAsync(clusters -> {
             DoubleDataSet meansDataSet = new DoubleDataSet("Clusters means", clusters.size());
             clusters.parallelStream().map(Cluster::getMean).forEach(mean -> meansDataSet.add(mean[0], mean[1]));
-            return meansDataSet;
-        }).thenAcceptAsync(meansDataSet -> Platform.runLater(() -> meanRenderer.getDatasets().setAll(meansDataSet)));
+            Platform.runLater(() -> meanRenderer.getDatasets().setAll(meansDataSet));
+        }).exceptionallyAsync(throwable -> {
+            logger.error(throwable.getMessage(), throwable);
+            return null;
+        });
 
         // After all enable start button.
-        CompletableFuture.allOf(futureClustersShown, futureMeansShown)
-                         .thenRun(() -> startButton.setDisable(false));
+        CompletableFuture.allOf(futureClustersShown, futureMeansShown).thenRun(() -> {
+            startButton.setDisable(false);
+        }).exceptionallyAsync(throwable -> {
+            logger.error(throwable.getMessage(), throwable);
+            return null;
+        });
     }
 }

@@ -1,5 +1,6 @@
 package by.bsuir.decision_making.clustering.model;
 
+import by.bsuir.decision_making.clustering.model.generation.DataGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ejml.data.DMatrixRMaj;
@@ -8,11 +9,10 @@ import org.ejml.simple.SimpleMatrix;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ClusterAnalysis {
 
@@ -48,15 +48,8 @@ public class ClusterAnalysis {
 
     private static final Logger logger = LogManager.getLogger(ClusterAnalysis.class);
 
-    public static List<Observation> generateData(int amount) {
-        Random random = new Random();
-        List<Observation> observations = new ArrayList<>(amount);
-        for (int i = 0; i < amount; i++) {
-            double xValue = random.nextDouble(-1, 1);
-            double yValue = random.nextDouble(-1, 1);
-            Observation observation = new Observation(xValue, yValue);
-            observations.add(observation);
-        }
+    public static List<Observation> generateData(int amount, DataGenerator dataGenerator) {
+        List<Observation> observations = Stream.generate(dataGenerator::generate).limit(amount).toList();
         return observations;
     }
 
