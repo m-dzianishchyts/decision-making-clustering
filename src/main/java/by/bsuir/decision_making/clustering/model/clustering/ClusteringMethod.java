@@ -4,7 +4,7 @@ import java.util.function.Supplier;
 
 public enum ClusteringMethod {
     K_MEANS(KMeansClustering::new),
-    MAXIMIN(null);
+    MAXIMIN(MaximinClustering::new);
 
     private final Supplier<ClusteringMethodAlgorithm> algorithmSupplier;
 
