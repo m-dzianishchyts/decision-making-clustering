@@ -59,12 +59,10 @@ public class KMeansClustering implements ClusteringMethodAlgorithm {
                 logger.debug("Iteration #{}. Clustering...", iteration);
                 assignToClusters(observations, clusters);
                 anyClusterMeanUpdated = updateMeans(clusters);
-                List<Integer> clustersSizes = clusters
+                logger.debug("Clusters sizes: {}", String.join(", ", clusters
                         .stream()
                         .map(cluster -> cluster.getObservations().size())
-                        .toList();
-                logger.debug("Clusters sizes: {}",
-                             String.join(", ", clustersSizes.stream().map(Object::toString).toList()));
+                        .map(Object::toString).toList()));
                 iteration++;
             } while (anyClusterMeanUpdated);
 
