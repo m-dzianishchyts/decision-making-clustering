@@ -54,6 +54,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -87,6 +88,8 @@ public class MainWindowController {
     private TableColumn<Observation, Number> observationYValueColumn;
     @FXML
     private Label clustersAmountLabel;
+    @FXML
+    private HBox clustersAmountSection;
     @FXML
     private Slider clustersAmountSlider;
     private SimpleIntegerProperty clustersAmount;
@@ -294,6 +297,19 @@ public class MainWindowController {
         clusteringMethodComboBox.getItems().addAll(ClusteringMethod.values());
         clusteringMethod.bindBidirectional(clusteringMethodComboBox.valueProperty());
         clusteringMethodComboBox.getSelectionModel().selectFirst();
+
+        clusteringMethod.addListener(((observable, oldValue, newValue) -> {
+            clustersAmountSection.setDisable(true);
+            clustersAmountSection.setVisible(false);
+
+            Set<ClusteringConfig.Property> supportedProperties = newValue.getSupportedProperties();
+            clustersAmountSection.setDisable(!supportedProperties.contains(ClusteringConfig.Property.CLUSTERS_AMOUNT));
+            clustersAmountSection.setVisible(supportedProperties.contains(ClusteringConfig.Property.CLUSTERS_AMOUNT));
+
+            if (!supportedProperties.contains(ClusteringConfig.Property.CLUSTERS_AMOUNT)) {
+                clustersAmount.set(1);
+            }
+        }));
     }
 
     private void setClustersAmountHandling() {
@@ -360,7 +376,9 @@ public class MainWindowController {
 
         // Perform clustering available observations.
         ClusteringMethodAlgorithm clusteringAlgorithm = clusteringMethod.get().getAlgorithm();
-        clusteringAlgorithm.setClusteringConfig(new ClusteringConfig(clustersAmount.get()));
+        ClusteringConfig config = new ClusteringConfig();
+        config.setProperty(ClusteringConfig.Property.CLUSTERS_AMOUNT, clustersAmount.get());
+        clusteringAlgorithm.setClusteringConfig(config);
         CompletableFuture<List<Cluster>> futureClusters =
                 CompletableFuture.supplyAsync(() -> clusteringAlgorithm.cluster(observations));
 

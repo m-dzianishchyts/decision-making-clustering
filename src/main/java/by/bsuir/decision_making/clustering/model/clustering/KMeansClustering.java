@@ -39,7 +39,7 @@ public class KMeansClustering implements ClusteringMethodAlgorithm {
     @Override
     public List<Cluster> cluster(List<Observation> observations) {
         try {
-            int clustersAmount = config.getClustersAmount();
+            int clustersAmount = config.getProperty(ClusteringConfig.Property.CLUSTERS_AMOUNT);
             logger.info("Cluster data: observations = {}, clusters = {}", observations.size(), clustersAmount);
             if (clustersAmount > observations.size()) {
                 String message = String.format("Not enough observations to perform clustering: %d. Needed: %d",
@@ -103,8 +103,7 @@ public class KMeansClustering implements ClusteringMethodAlgorithm {
                     boolean meanUpdated = MeanComparator.compare(updatedMean, oldMean) != 0;
                     if (meanUpdated) {
                         cluster.setMean(updatedMean);
-                        logger.trace("Cluster mean update: {} -> {} (delta: {})",
-                                     oldMean, updatedMean,
+                        logger.trace("Cluster mean update: {} -> {} (delta: {})", oldMean, updatedMean,
                                      EuclideanDistance.compute(oldMean, updatedMean));
                     }
                     return meanUpdated;

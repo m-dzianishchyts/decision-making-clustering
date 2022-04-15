@@ -6,16 +6,32 @@ public class ClusteringConfig {
 
     public static final ClusteringConfig BLANK_CONFIG = new ClusteringConfig(DEFAULT_CLUSTERS_AMOUNT);
 
-    private final int clustersAmount;
+    private int clustersAmount;
 
-    public ClusteringConfig(int clustersAmount) {
+    public ClusteringConfig() {
+    }
+
+    private ClusteringConfig(int clustersAmount) {
         if (clustersAmount <= 0) {
             throw new IllegalArgumentException("Clusters amount must be positive");
         }
         this.clustersAmount = clustersAmount;
     }
 
-    public int getClustersAmount() {
-        return clustersAmount;
+    public void setProperty(Property property, int value) {
+        switch (property) {
+            case CLUSTERS_AMOUNT -> clustersAmount = value;
+        }
+    }
+
+    public int getProperty(Property property) {
+        int value = switch (property) {
+            case CLUSTERS_AMOUNT -> clustersAmount;
+        };
+        return value;
+    }
+
+    public enum Property {
+        CLUSTERS_AMOUNT
     }
 }
