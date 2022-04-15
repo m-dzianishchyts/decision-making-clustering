@@ -15,13 +15,18 @@ public class GaussianDistribution implements DistributionMethod {
     }
 
     @Override
+    public double getFirstValue() {
+        return mean;
+    }
+
+    @Override
     public void setFirstValue(double value) {
         mean = value;
     }
 
     @Override
-    public double getFirstValue() {
-        return mean;
+    public double getSecondValue() {
+        return deviation;
     }
 
     @Override
@@ -30,10 +35,5 @@ public class GaussianDistribution implements DistributionMethod {
             throw new IllegalArgumentException("Deviation cannot be negative");
         }
         deviation = value;
-    }
-
-    @Override
-    public double getSecondValue() {
-        return deviation;
     }
 }

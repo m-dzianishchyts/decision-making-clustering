@@ -14,22 +14,22 @@ public class ExponentialDistribution implements DistributionMethod {
     }
 
     @Override
-    public void setFirstValue(double value) {
-        mean = value;
-    }
-
-    @Override
     public double getFirstValue() {
         return mean;
     }
 
     @Override
-    public void setSecondValue(double value) {
-        throw new UnsupportedOperationException("No second value for exponential distribution");
+    public void setFirstValue(double value) {
+        mean = value;
     }
 
     @Override
     public double getSecondValue() {
+        throw new UnsupportedOperationException("No second value for exponential distribution");
+    }
+
+    @Override
+    public void setSecondValue(double value) {
         throw new UnsupportedOperationException("No second value for exponential distribution");
     }
 }

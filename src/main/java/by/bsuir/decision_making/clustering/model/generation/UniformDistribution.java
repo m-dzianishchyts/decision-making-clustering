@@ -14,6 +14,11 @@ public class UniformDistribution implements DistributionMethod {
     }
 
     @Override
+    public double getFirstValue() {
+        return bound;
+    }
+
+    @Override
     public void setFirstValue(double value) {
         if (value <= 0) {
             throw new IllegalArgumentException("Bound must be positive");
@@ -25,17 +30,12 @@ public class UniformDistribution implements DistributionMethod {
     }
 
     @Override
-    public double getFirstValue() {
-        return bound;
-    }
-
-    @Override
-    public void setSecondValue(double value) {
+    public double getSecondValue() {
         throw new UnsupportedOperationException("No second value for uniform distribution");
     }
 
     @Override
-    public double getSecondValue() {
+    public void setSecondValue(double value) {
         throw new UnsupportedOperationException("No second value for uniform distribution");
     }
 }

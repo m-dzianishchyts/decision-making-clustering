@@ -4,9 +4,11 @@ public interface DistributionMethod {
 
     double generateValue();
 
-    void setFirstValue(double value) throws IllegalArgumentException;
     double getFirstValue();
 
-    void setSecondValue(double value) throws IllegalArgumentException, UnsupportedOperationException;
+    void setFirstValue(double value) throws IllegalArgumentException;
+
     double getSecondValue();
+
+    void setSecondValue(double value) throws IllegalArgumentException, UnsupportedOperationException;
 }
