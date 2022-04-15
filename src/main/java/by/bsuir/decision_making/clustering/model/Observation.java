@@ -19,12 +19,21 @@ public class Observation {
         values = Arrays.copyOf(otherValues, otherValues.length);
     }
 
+    public double[] getValues() {
+        return values;
+    }
+
     public double getValue(int index) {
         return values[index];
     }
 
     public int getDimension() {
         return values.length;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(values);
     }
 
     @Override
@@ -37,11 +46,6 @@ public class Observation {
         }
         var that = (Observation) o;
         return Arrays.equals(values, that.values);
-    }
-
-    @Override
-    public int hashCode() {
-        return Arrays.hashCode(values);
     }
 
     @Override

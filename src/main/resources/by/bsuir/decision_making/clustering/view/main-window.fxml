@@ -70,19 +70,19 @@
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
-                                    <VBox fx:id="firstCoordinateSection" alignment="TOP_CENTER" spacing="10.0" styleClass="first-coordinate-section">
+                                    <VBox alignment="TOP_CENTER" spacing="10.0">
                                        <children>
-                                          <Label fx:id="firstCoordinateLabel" styleClass="coordinate-label" text="X" />
+                                          <Label fx:id="firstCoordinateLabel" text="X" />
                                           <HBox alignment="CENTER_LEFT" spacing="10.0">
                                              <Label text="Distribution:" />
                                              <ComboBox fx:id="firstCoordinateDistributionComboBox" prefWidth="140.0" promptText="Select distribution" />
                                           </HBox>
-                                          <HBox fx:id="firstCoordinateFirstValueSection" alignment="CENTER_LEFT" spacing="10.0" styleClass="first-value-section">
-                                             <Label fx:id="firstCoordinateFirstValueLabel" styleClass="value-label" text="Value 1:" />
+                                          <HBox fx:id="firstCoordinateFirstValueSection" alignment="CENTER_LEFT" spacing="10.0">
+                                             <Label fx:id="firstCoordinateFirstValueLabel" text="Value 1:" />
                                              <Pane HBox.hgrow="SOMETIMES" />
                                              <TextField fx:id="firstCoordinateFirstValueTextField" prefWidth="140.0" />
                                           </HBox>
-                                          <HBox fx:id="firstCoordinateSecondValueSection" alignment="CENTER_LEFT" spacing="10.0" styleClass="second-value-section">
+                                          <HBox fx:id="firstCoordinateSecondValueSection" alignment="CENTER_LEFT" spacing="10.0">
                                              <children>
                                                 <Label fx:id="firstCoordinateSecondValueLabel" text="Value 2:" />
                                                 <Pane HBox.hgrow="SOMETIMES" />
@@ -91,23 +91,23 @@
                                           </HBox>
                                        </children>
                                     </VBox>
-                                    <VBox fx:id="secondCoordinateSection" alignment="TOP_CENTER" spacing="10.0" styleClass="second-coordinate-section">
+                                    <VBox alignment="TOP_CENTER" spacing="10.0">
                                        <children>
-                                          <Label fx:id="secondCoordinateLabel" styleClass="coordinate-label" text="Y" />
+                                          <Label fx:id="secondCoordinateLabel" text="Y" />
                                           <HBox alignment="CENTER_LEFT" spacing="10.0">
                                              <children>
                                                 <Label text="Distribution:" />
                                                 <ComboBox fx:id="secondCoordinateDistributionComboBox" prefWidth="140.0" promptText="Select distribution" />
                                              </children>
                                           </HBox>
-                                          <HBox fx:id="secondCoordinateFirstValueSection" alignment="CENTER_LEFT" spacing="10.0" styleClass="first-value-section">
+                                          <HBox fx:id="secondCoordinateFirstValueSection" alignment="CENTER_LEFT" spacing="10.0">
                                              <children>
-                                                <Label fx:id="secondCoordinateFirstValueLabel" styleClass="value-label" text="Value 1:" />
+                                                <Label fx:id="secondCoordinateFirstValueLabel" text="Value 1:" />
                                                 <Pane HBox.hgrow="SOMETIMES" />
                                                 <TextField fx:id="secondCoordinateFirstValueTextField" prefWidth="140.0" />
                                              </children>
                                           </HBox>
-                                          <HBox fx:id="secondCoordinateSecondValueSection" alignment="CENTER_LEFT" spacing="10.0" styleClass="second-value-section">
+                                          <HBox fx:id="secondCoordinateSecondValueSection" alignment="CENTER_LEFT" spacing="10.0">
                                              <children>
                                                 <Label fx:id="secondCoordinateSecondValueLabel" text="Value 2:" />
                                                 <Pane HBox.hgrow="SOMETIMES" />
@@ -147,7 +147,7 @@
                                        </children>
                                     </HBox>
                                     <Label text="Clustering method:" />
-                                    <ComboBox prefWidth="150.0" promptText="Select method" GridPane.columnIndex="1" />
+                                    <ComboBox fx:id="clusteringMethodComboBox" prefWidth="150.0" promptText="Select method" GridPane.columnIndex="1" />
                                  </children>
                               </GridPane>
                            </children>

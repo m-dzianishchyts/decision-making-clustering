@@ -9,9 +9,9 @@ import java.util.StringJoiner;
 
 public class Cluster {
 
-    private String name;
     double[] mean;
     List<Observation> observations;
+    private String name;
 
     public Cluster(double[] mean) {
         this(mean, null);

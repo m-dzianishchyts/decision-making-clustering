@@ -1,6 +1,7 @@
-package by.bsuir.decision_making.clustering.model;
+package by.bsuir.decision_making.clustering.model.clustering;
 
-import by.bsuir.decision_making.clustering.model.generation.DataGenerator;
+import by.bsuir.decision_making.clustering.model.Cluster;
+import by.bsuir.decision_making.clustering.model.Observation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.ejml.data.DMatrixRMaj;
@@ -11,24 +12,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Optional;
 
-public class ClusterAnalysis {
+public class KMeansClustering implements ClusteringMethodAlgorithm {
 
-    public static final DistanceMethod<double[]> EuclideanDistance = (valuesA, valuesB) -> {
-        if (valuesA.length != valuesB.length) {
-            throw new IllegalArgumentException(String.format("Values are of different dimensions: %d, %d",
-                                                             valuesA.length, valuesB.length));
-        }
-        DMatrixRMaj rawVectorObservationA = DMatrixRMaj.wrap(1, valuesA.length, valuesA);
-        DMatrixRMaj rawVectorObservationB = DMatrixRMaj.wrap(1, valuesB.length, valuesB);
-        SimpleMatrix vectorObservationA = SimpleMatrix.wrap(rawVectorObservationA);
-        SimpleMatrix vectorObservationB = SimpleMatrix.wrap(rawVectorObservationB);
-        SimpleMatrix subtractionMatrix = vectorObservationB.minus(vectorObservationA);
-        double distance = subtractionMatrix.normF();
-        return distance;
-    };
+    private static final Logger logger = LogManager.getLogger(KMeansClustering.class);
 
     private static final double MEAN_THRESHOLD = 0.01;
 
@@ -46,38 +34,40 @@ public class ClusterAnalysis {
         return Double.compare(meanVectorA.normF(), meanVectorB.normF());
     };
 
-    private static final Logger logger = LogManager.getLogger(ClusterAnalysis.class);
+    private ClusteringConfig config = ClusteringConfig.BLANK_CONFIG;
 
-    public static List<Observation> generateData(int amount, DataGenerator dataGenerator) {
-        List<Observation> observations = Stream.generate(dataGenerator::generate).limit(amount).toList();
-        return observations;
-    }
-
-    public static List<Cluster> cluster(List<Observation> observations, int clustersAmount) {
+    @Override
+    public List<Cluster> cluster(List<Observation> observations) {
         try {
+            int clustersAmount = config.getClustersAmount();
             logger.info("Cluster data: observations = {}, clusters = {}", observations.size(), clustersAmount);
             if (clustersAmount > observations.size()) {
-                throw new IllegalArgumentException("Not enough observations to perform clustering: "
-                                                   + observations.size());
+                String message = String.format("Not enough observations to perform clustering: %d. Needed: %d",
+                                               observations.size(), clustersAmount);
+                throw new IllegalArgumentException(message);
             }
+
             Instant before = Instant.now();
             List<Cluster> clusters = observations
                     .stream()
                     .limit(clustersAmount)
-                    .map((Observation mean) -> new Cluster(mean.values)).toList();
+                    .map((Observation mean) -> new Cluster(mean.getValues())).toList();
             int iteration = 0;
             boolean anyClusterMeanUpdated;
+
             do {
                 logger.debug("Iteration #{}. Clustering...", iteration);
-                iteration++;
                 assignToClusters(observations, clusters);
                 anyClusterMeanUpdated = updateMeans(clusters);
-                String clustersSizes = clusters.stream()
-                                               .mapToInt(cluster -> cluster.getObservations().size())
-                                               .mapToObj(String::valueOf)
-                                               .collect(Collectors.joining(", "));
-                logger.debug("Clusters sizes: {}", clustersSizes);
+                List<Integer> clustersSizes = clusters
+                        .stream()
+                        .map(cluster -> cluster.getObservations().size())
+                        .toList();
+                logger.debug("Clusters sizes: {}",
+                             String.join(", ", clustersSizes.stream().map(Object::toString).toList()));
+                iteration++;
             } while (anyClusterMeanUpdated);
+
             Instant after = Instant.now();
             Duration clusteringTime = Duration.between(before, after);
             logger.info("Clustering succeed in {}.{} sec", clusteringTime.getSeconds(), clusteringTime.toMillisPart());
@@ -88,8 +78,18 @@ public class ClusterAnalysis {
         }
     }
 
+    @Override
+    public ClusteringConfig getClusteringConfig() {
+        return config;
+    }
+
+    @Override
+    public void setClusteringConfig(ClusteringConfig config) {
+        this.config = config;
+    }
+
     private static void assignToClusters(List<Observation> observations, List<Cluster> clusters) {
-        clusters.forEach(cluster -> cluster.observations.clear());
+        clusters.forEach(cluster -> cluster.getObservations().clear());
         observations.parallelStream().forEach(observation -> {
             Cluster relevantCluster = pickRelevantCluster(observation, clusters);
             relevantCluster.getObservations().add(observation);
@@ -100,11 +100,11 @@ public class ClusterAnalysis {
         boolean anyClusterMeanUpdated = clusters
                 .parallelStream()
                 .map(cluster -> {
-                    double[] oldMean = cluster.mean;
+                    double[] oldMean = cluster.getMean();
                     double[] updatedMean = computeUpdatedMean(cluster);
                     boolean meanUpdated = MeanComparator.compare(updatedMean, oldMean) != 0;
                     if (meanUpdated) {
-                        cluster.mean = updatedMean;
+                        cluster.setMean(updatedMean);
                         logger.trace("Cluster mean update: {} -> {} (delta: {})",
                                      oldMean, updatedMean,
                                      EuclideanDistance.compute(oldMean, updatedMean));
@@ -117,24 +117,31 @@ public class ClusterAnalysis {
     }
 
     private static Cluster pickRelevantCluster(Observation observation, List<Cluster> clusters) {
-        Cluster relevantCluster = clusters.parallelStream().min(Comparator.comparingDouble(
-                                                  cluster -> EuclideanDistance.compute(observation.values, cluster.mean)))
-                                          .orElseThrow();
+        Optional<Cluster> emptyCluster = clusters
+                .stream()
+                .filter(cluster -> cluster.getObservations().isEmpty())
+                .findAny();
+        Cluster relevantCluster = emptyCluster.orElseGet(() -> clusters
+                .stream()
+                .min(Comparator.comparingDouble(cluster -> EuclideanDistance.compute(observation.getValues(),
+                                                                                     cluster.getMean())))
+                .orElseThrow()
+        );
         logger.trace("Observation {} relevant to a cluster with mean {} (distance: {})",
-                     observation.values, relevantCluster.mean,
-                     EuclideanDistance.compute(observation.values, relevantCluster.mean));
+                     observation.getValues(), relevantCluster.getMean(),
+                     EuclideanDistance.compute(observation.getValues(), relevantCluster.getMean()));
         return relevantCluster;
     }
 
     private static double[] computeUpdatedMean(Cluster cluster) {
-        SimpleMatrix observationsSum = cluster.observations
+        SimpleMatrix observationsSum = cluster
+                .getObservations()
                 .parallelStream()
-                .map(observation -> SimpleMatrix.wrap(
-                        DMatrixRMaj.wrap(1, observation.getDimension(),
-                                         observation.values)))
+                .map(observation -> SimpleMatrix.wrap(DMatrixRMaj.wrap(1, observation.getDimension(),
+                                                                       observation.getValues())))
                 .reduce(SimpleBase::plus)
                 .orElseThrow();
-        double[] updatedMean = observationsSum.divide(cluster.observations.size()).getDDRM().data;
+        double[] updatedMean = observationsSum.divide(cluster.getObservations().size()).getDDRM().data;
         return updatedMean;
     }
 }
