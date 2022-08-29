@@ -21,17 +21,6 @@ public final class Configuration {
         properties = loadProperties();
     }
 
-    public static synchronized Configuration getInstance() {
-        if (instance == null) {
-            instance = new Configuration();
-        }
-        return instance;
-    }
-
-    public Properties getProperties() {
-        return properties;
-    }
-
     private Properties loadProperties() {
         Properties loadedProperties = new Properties();
         InputStream propertiesInputStream = getClass().getResourceAsStream("/app.properties");
@@ -45,5 +34,16 @@ public final class Configuration {
             logger.error("Config file was not found.");
         }
         return loadedProperties;
+    }
+
+    public static synchronized Configuration getInstance() {
+        if (instance == null) {
+            instance = new Configuration();
+        }
+        return instance;
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 }
